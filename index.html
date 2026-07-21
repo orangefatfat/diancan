@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🐾 维哥大排档</title>
+    <style>
+        /* ===================== 全局重置 & 基础 ===================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --cream: #FFF8F0;
+            --warm-orange: #F4A460;
+            --soft-coral: #F08080;
+            --fresh-green: #8BC34A;
+            --deep-green: #6B8E23;
+            --brown: #8B6914;
+            --text-dark: #5D4037;
+            --text-light: #8D6E63;
+            --card-shadow: 0 4px 20px rgba(139, 105, 20, 0.10);
+            --radius: 20px;
+        }
+
+        body {
+            font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: var(--cream);
+            color: var(--text-dark);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ===================== 飘落特效 ===================== */
+        .float-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .float-item {
+            position: absolute;
+            font-size: 22px;
+            animation: floatDown linear infinite;
+            opacity: 0.4;
+        }
+        @keyframes floatDown {
+            0% { transform: translateY(-60px) rotate(0deg); opacity: 0.6; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* ===================== 启动遮罩 ===================== */
+        #splash {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: linear-gradient(145deg, #FFF8F0 0%, #FFECD2 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        #splash.hidden {
+            opacity: 0;
+            transform: scale(1.1);
+            pointer-events: none;
+        }
+
+        #splash .logo-emoji {
+            font-size: 72px;
+            margin-bottom: 16px;
+            animation: bounce 2s ease-in-out infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-16px); }
+        }
+
+        #splash h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-dark);
+            letter-spacing: 2px;
+        }
+        #splash h1 .highlight {
+            color: var(--soft-coral);
+        }
+        #splash .sub {
+            margin-top: 12px;
+            font-size: 16px;
+            color: var(--text-light);
+        }
+        #splash .btn-enter {
+            margin-top: 36px;
+            padding: 16px 48px;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(135deg, #F4A460, #F08080);
+            color: #fff;
+            font-size: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 6px 24px rgba(240, 128, 128, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+            letter-spacing: 2px;
+        }
+        #splash .btn-enter:hover {
+            transform: scale(1.06);
+            box-shadow: 0 8px 32px rgba(240, 128, 128, 0.55);
+        }
+        #splash .btn-enter:active {
+            transform: scale(0.96);
+        }
+        #splash .hint {
+            margin-top: 16px;
+            font-size: 14px;
+            color: #bbb;
+        }
+
+        /* ===================== 主内容 ===================== */
+        .main-wrapper {
+            position: relative;
+            z-index: 1;
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 20px 16px 120px;
+        }
+
+        /* ===== 头部 ===== */
+        .header {
+            text-align: center;
+            padding: 20px 0 16px;
+        }
+        .header .avatar-area {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+        .header .avatar-placeholder {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #F4A46022, #F0808022);
+            border: 3px dashed #F4A46066;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            color: #F4A46088;
+            cursor: default;
+            transition: 0.3s;
+        }
+        .header .avatar-placeholder.has-image {
+            border: 3px solid var(--fresh-green);
+        }
+        .header h2 {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+        .header h2 .name-tian {
+            color: var(--soft-coral);
+        }
+        .header h2 .name-wei {
+            color: var(--warm-orange);
+        }
+        .header p {
+            margin-top: 4px;
+            font-size: 15px;
+            color: var(--text-light);
+            letter-spacing: 1px;
+        }
+
+        /* ===== 分类 Tab ===== */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0 18px;
+        }
+        .tab-btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 50px;
+            background: #fff;
+            color: var(--text-light);
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: var(--card-shadow);
+            transition: all 0.25s;
+            flex: 1;
+            max-width: 120px;
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--warm-orange), var(--soft-coral));
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(244, 164, 96, 0.4);
+        }
+        .tab-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* ===== 菜品网格 ===== */
+        .menu-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        .menu-card {
+            background: #fff;
+            border-radius: var(--radius);
+            padding: 18px 14px 16px;
+            box-shadow: var(--card-shadow);
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            user-select: none;
+        }
+        .menu-card:active {
+            transform: scale(0.96);
+        }
+        .menu-card .emoji {
+            font-size: 42px;
+            display: block;
+            margin-bottom: 6px;
+        }
+        .menu-card .name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+        .menu-card .badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: var(--soft-coral);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .menu-card .badge.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .menu-card.selected {
+            box-shadow: 0 0 0 2.5px var(--fresh-green), var(--card-shadow);
+        }
+
+        /* ===== 已选区域 ===== */
+        .cart-area {
+            margin-top: 24px;
+            background: #fff;
+            border-radius: var(--radius);
+            padding: 16px 18px;
+            box-shadow: var(--card-shadow);
+        }
+        .cart-area .cart-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .cart-area .cart-title .count {
+            font-size: 13px;
+            color: #fff;
+            background: var(--soft-coral);
+            border-radius: 50px;
+            padding: 2px 12px;
+        }
+        .cart-list {
+            margin-top: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            min-height: 32px;
+        }
+        .cart-item {
+            background: #FFF3E0;
+            border-radius: 50px;
+            padding: 6px 14px 6px 16px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .cart-item .del {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: none;
+            background: #ddd;
+            color: #fff;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            line-height: 1;
+        }
+        .cart-item .del:hover {
+            background: var(--soft-coral);
+        }
+        .cart-empty {
+            font-size: 14px;
+            color: #ccc;
+            width: 100%;
+            text-align: center;
+            padding: 8px 0;
+        }
+
+        /* ===== 提交按钮 ===== */
+        .btn-order {
+            display: block;
+            width: 100%;
+            margin-top: 18px;
+            padding: 16px;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(135deg, var(--fresh-green), var(--deep-green));
+            color: #fff;
+            font-size: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 6px 24px rgba(139, 195, 74, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+            letter-spacing: 3px;
+        }
+        .btn-order:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .btn-order:not(:disabled):hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 32px rgba(139, 195, 74, 0.55);
+        }
+        .btn-order:not(:disabled):active {
+            transform: scale(0.97);
+        }
+
+        /* ===== 确认弹窗 ===== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-box {
+            background: #fff;
+            border-radius: 28px;
+            padding: 36px 28px 28px;
+            max-width: 360px;
+            width: 88%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            transform: scale(0.85);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .modal-overlay.show .modal-box {
+            transform: scale(1);
+        }
+        .modal-box .big-emoji {
+            font-size: 64px;
+            margin-bottom: 12px;
+        }
+        .modal-box h3 {
+            font-size: 24px;
+            color: var(--text-dark);
+            margin-bottom: 6px;
+        }
+        .modal-box .modal-msg {
+            font-size: 15px;
+            color: var(--text-light);
+            line-height: 1.6;
+            margin-bottom: 4px;
+        }
+        .modal-box .modal-dishes {
+            font-size: 14px;
+            color: var(--brown);
+            background: #FFF8F0;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin: 14px 0 18px;
+            line-height: 1.8;
+        }
+        .modal-box .btn-ok {
+            padding: 12px 48px;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(135deg, var(--warm-orange), var(--soft-coral));
+            color: #fff;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(240, 128, 128, 0.35);
+            transition: transform 0.2s;
+        }
+        .modal-box .btn-ok:hover {
+            transform: scale(1.05);
+        }
+        .modal-box .btn-ok:active {
+            transform: scale(0.95);
+        }
+
+        /* ===== 页脚 ===== */
+        .footer {
+            text-align: center;
+            padding: 32px 0 16px;
+            color: var(--text-light);
+            font-size: 13px;
+            opacity: 0.6;
+        }
+
+        .egg-egg {
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        .egg-egg:hover {
+            opacity: 0.6 !important;
+        }
+
+        /* ===================== 响应式 ===================== */
+        @media (max-width: 380px) {
+            .menu-grid { gap: 10px; }
+            .menu-card { padding: 14px 10px 12px; }
+            .menu-card .emoji { font-size: 34px; }
+            .menu-card .name { font-size: 14px; }
+            .header h2 { font-size: 22px; }
+        }
+        @media (min-width: 600px) {
+            .main-wrapper { padding: 40px 24px 120px; }
+            .menu-grid { grid-template-columns: 1fr 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ====== 飘落特效背景 ====== -->
+    <div class="float-container" id="floatContainer"></div>
+
+    <!-- ====== 欢迎启动页 ====== -->
+    <div id="splash">
+        <div class="logo-emoji">🍳</div>
+        <h1>🐾 维哥大排档</h1>
+        <button class="btn-enter" onclick="enterApp()">🐶 点菜啦</button>
+        <div class="hint">— 帅气维哥已经准备好锅铲了 —</div>
+    </div>
+
+    <!-- ====== 主内容 ====== -->
+    <div class="main-wrapper">
+
+        <!-- 头部 -->
+        <div class="header">
+            <div class="avatar-area">
+                <div class="avatar-placeholder" id="avatarPlaceholder" title="可以放你们的合照" style="cursor:pointer;" onclick="shyConfirm(1)">
+                    🐕‍🦺
+                </div>
+            </div>
+            <p><span onclick="shyConfirm(4)" style="cursor:pointer;">🐕</span> 今天想吃啥，点了我去做</p>
+        </div>
+
+        <!-- Tab -->
+        <div class="tabs">
+            <button class="tab-btn active" data-cat="main" onclick="switchTab('main')">🍚 主食</button>
+            <button class="tab-btn" data-cat="dish" onclick="switchTab('dish')">🥗 配菜</button>
+            <button class="tab-btn" data-cat="fruit" onclick="switchTab('fruit')">🍉 水果</button>
+        </div>
+
+        <!-- 菜品网格 -->
+        <div class="menu-grid" id="menuGrid"></div>
+
+        <!-- 已选区域 -->
+        <div class="cart-area">
+            <div class="cart-title">
+                <span onclick="shyConfirm(2)" style="cursor:pointer;">🛒</span> 已选清单
+                <span class="count" id="cartCount">0</span>
+            </div>
+            <div class="cart-list" id="cartList">
+                <div class="cart-empty" id="cartEmpty">🐶 还没有选，快点点吧～</div>
+            </div>
+            <button class="btn-order" id="btnOrder" disabled onclick="submitOrder()">
+                🐾 点好了，帅气维哥去做！
+            </button>
+        </div>
+
+        <div class="footer">
+            <span class="egg-egg" onclick="shyConfirm(3)">🔥</span> 维哥大排档 🔥
+            <div style="margin-top:10px;font-size:22px;color:#ddd;cursor:pointer;opacity:0.35;transition:opacity 0.3s;" 
+                 onmouseover="this.style.opacity='0.9'" 
+                 onmouseout="this.style.opacity='0.35'"
+                 onclick="shyConfirm(0)">
+                🐾
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== 害羞确认弹窗（多层） ====== -->
+    <div class="modal-overlay" id="shyOverlay">
+        <div class="modal-box">
+            <div class="big-emoji" id="shyEmoji">😳</div>
+            <h3 id="shyTitle">真的要打开吗？</h3>
+            <div class="modal-msg" id="shyDesc">很害羞的……</div>
+            <div style="margin-top:20px;display:flex;gap:12px;justify-content:center;">
+                <button class="btn-ok" id="shyCancelBtn" style="background:#ddd;color:#999;box-shadow:none;flex:1;" onclick="cancelShy()">算了</button>
+                <button class="btn-ok" id="shyConfirmBtn" style="flex:1;" onclick="confirmShy()">🥹 继续</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== 「此功能不可用」= ====== -->
+    <div class="modal-overlay" id="naOverlay">
+        <div class="modal-box">
+            <div class="big-emoji">😅</div>
+            <h3>此功能不可用</h3>
+            <div class="modal-msg">还是继续点菜吧～</div>
+            <div style="margin-top:20px;">
+                <button class="btn-ok" onclick="closeNA()">好吧</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== 彩蛋弹窗 ====== -->
+    <div class="modal-overlay" id="eggOverlay">
+        <div class="modal-box" style="background:linear-gradient(145deg,#FFF8F0,#FFEEDD);">
+            <div class="big-emoji" id="eggEmoji">👑</div>
+            <h3 style="color:#F4A460;" id="eggTitle">天天小朋友专属</h3>
+            <div class="modal-msg" style="font-size:18px;font-weight:600;color:#8B6914;" id="eggDesc">
+                🐶 仅此一位 🐶
+            </div>
+            <div style="margin:16px 0 20px;font-size:28px;letter-spacing:6px;" id="eggDecor">
+                🐾 🦴 🧸 🐾 🦴 🧸
+            </div>
+            <button class="btn-ok" onclick="closeEgg()">🥰 知道啦</button>
+        </div>
+    </div>
+
+    <!-- ====== 确认弹窗 ====== -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-box">
+            <div class="big-emoji">🐕</div>
+            <h3>收到啦！</h3>
+            <div class="modal-msg">
+                帅气维哥收到啦 🐾<br>
+                这就去给你做
+            </div>
+            <div class="modal-dishes" id="modalDishes"></div>
+            <div id="modalTip"></div>
+            <button class="btn-ok" onclick="closeModal()">🦴 等你做好！</button>
+        </div>
+    </div>
+
+    <script>
+        // ====================================================================
+        //  数据
+        // ====================================================================
+        const MENU = {
+            main: [
+                { emoji: '🍚', name: '大米饭' },
+                { emoji: '🌽', name: '甜玉米' },
+                { emoji: '🥔', name: '土豆泥' },
+            ],
+            dish: [
+                { emoji: '🥒', name: '凉拌黄瓜鸡丝' },
+                { emoji: '🥦', name: '清炒西蓝花' },
+                { emoji: '🥬', name: '无敌大菠菜' },
+                { emoji: '🥟', name: '韭菜炒蛋' },
+                { emoji: '🥕', name: '胡萝卜炒蛋' },
+                { emoji: '🦐', name: '水煮大虾' },
+                { emoji: '🥘', name: '干锅包菜' },
+            ],
+            fruit: [
+                { emoji: '🔥', name: '火龙果' },
+                { emoji: '🍇', name: '巨峰葡萄' },
+                { emoji: '🍅', name: '甜蜜小番茄' },
+            ]
+        };
+
+        const CAT_LABELS = { main: '主食', dish: '配菜', fruit: '水果' };
+
+        // ====================================================================
+        //  状态
+        // ====================================================================
+        let currentTab = 'main';
+        const selected = {};          // key: 菜品名 → { emoji, name, cat }
+        const selectedCount = {};     // key: 菜品名 → 数量 (目前最多1)
+
+        // ====================================================================
+        //  飘落特效 — 小狗 → 进入后变美食
+        // ====================================================================
+        let floatTimer = null;
+
+        function spawnFloats(emojis, count) {
+            const container = document.getElementById('floatContainer');
+            container.innerHTML = '';
+            if (floatTimer) { clearInterval(floatTimer); floatTimer = null; }
+            for (let i = 0; i < count; i++) {
+                const span = document.createElement('span');
+                span.className = 'float-item';
+                span.textContent = emojis[i % emojis.length];
+                span.style.left = Math.random() * 100 + '%';
+                span.style.fontSize = (16 + Math.random() * 18) + 'px';
+                span.style.animationDuration = (10 + Math.random() * 16) + 's';
+                span.style.animationDelay = (Math.random() * 14) + 's';
+                container.appendChild(span);
+            }
+        }
+
+        // 启动：小狗爪印
+        const dogEmojis = ['🐾', '🐶', '🐕', '🦴', '🧸', '🐕‍🦺', '🦮'];
+        spawnFloats(dogEmojis, 22);
+
+        // 美食特效列表
+        const foodEmojis = ['🍳', '🍚', '🥘', '🦐', '🥦', '🥟', '🍇', '🍅', '🌽', '🥒', '🥔', '🥬', '🥕', '🔥', '🍗', '🥩'];
+
+        function switchToFood() {
+            spawnFloats(foodEmojis, 28);
+        }
+
+        // ====================================================================
+        //  渲染菜品
+        // ====================================================================
+        function renderMenu() {
+            const grid = document.getElementById('menuGrid');
+            const items = MENU[currentTab];
+            grid.innerHTML = '';
+            items.forEach(item => {
+                const key = item.name;
+                const isSelected = !!selected[key];
+                const card = document.createElement('div');
+                card.className = 'menu-card' + (isSelected ? ' selected' : '');
+                card.innerHTML = `
+                    <span class="emoji">${item.emoji}</span>
+                    <span class="name">${item.name}</span>
+                    <span class="badge ${isSelected ? 'show' : ''}">✓</span>
+                `;
+                card.onclick = () => toggleItem(item, currentTab);
+                grid.appendChild(card);
+            });
+        }
+
+        // ====================================================================
+        //  切换选择
+        // ====================================================================
+        function toggleItem(item, cat) {
+            const key = item.name;
+            if (selected[key]) {
+                // 取消选择
+                delete selected[key];
+                delete selectedCount[key];
+            } else {
+                // 选择
+                selected[key] = { emoji: item.emoji, name: item.name, cat };
+                selectedCount[key] = 1;
+            }
+            renderMenu();
+            renderCart();
+        }
+
+        // ====================================================================
+        //  删除已选
+        // ====================================================================
+        function removeItem(name) {
+            delete selected[name];
+            delete selectedCount[name];
+            renderMenu();
+            renderCart();
+        }
+
+        // ====================================================================
+        //  渲染购物车
+        // ====================================================================
+        function renderCart() {
+            const list = document.getElementById('cartList');
+            const empty = document.getElementById('cartEmpty');
+            const countEl = document.getElementById('cartCount');
+            const btn = document.getElementById('btnOrder');
+
+            const keys = Object.keys(selected);
+            countEl.textContent = keys.length;
+            btn.disabled = keys.length === 0;
+
+            list.innerHTML = '';
+            if (keys.length === 0) {
+                list.appendChild(empty);
+                return;
+            }
+            keys.forEach(key => {
+                const item = selected[key];
+                const div = document.createElement('div');
+                div.className = 'cart-item';
+                div.innerHTML = `
+                    ${item.emoji} ${item.name}
+                    <button class="del" onclick="removeItem('${key}')">✕</button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        // ====================================================================
+        //  Tab 切换
+        // ====================================================================
+        function switchTab(cat) {
+            currentTab = cat;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.cat === cat);
+            });
+            renderMenu();
+        }
+
+        // ====================================================================
+        //  提交订单
+        // ====================================================================
+        function submitOrder() {
+            const keys = Object.keys(selected);
+            if (keys.length === 0) return;
+
+            // 按分类分组显示
+            const groups = { main: [], dish: [], fruit: [] };
+            keys.forEach(k => {
+                const item = selected[k];
+                groups[item.cat].push(item);
+            });
+
+            let html = '';
+            ['main', 'dish', 'fruit'].forEach(cat => {
+                if (groups[cat].length) {
+                    html += `<strong>${CAT_LABELS[cat]}：</strong>`;
+                    html += groups[cat].map(i => i.emoji + i.name).join('、');
+                    html += '<br>';
+                }
+            });
+
+            document.getElementById('modalDishes').innerHTML = html;
+
+            // 配菜太少提醒
+            const dishCount = groups['dish'].length;
+            let tipHtml = '';
+            if (dishCount < 2) {
+                tipHtml = '<div style="margin-top:12px;font-size:14px;color:#F08080;background:#FFF0F0;border-radius:10px;padding:10px 14px;">🤨 选这么点够吃吗？再点两个配菜吧！</div>';
+            }
+            document.getElementById('modalTip').innerHTML = tipHtml;
+
+            document.getElementById('modalOverlay').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('show');
+        }
+
+        // ====================================================================
+        //  5个害羞彩蛋 🥚  + 多层确认
+        // ====================================================================
+        const eggs = [
+            { emoji: '👑', title: '天天小朋友专属', desc: '🐶 仅此一位 🐶', decor: '🐾 🦴 🧸 🐾 🦴 🧸' },
+            { emoji: '🌟', title: 'VIP贵宾卡', desc: '天天是维哥大排档的永久VIP ✨', decor: '⭐ 🌟 ⭐ 🌟 ⭐ 🌟' },
+            { emoji: '🧸', title: '干饭第一名', desc: '天天小朋友吃饭最积极 🏆', decor: '🍚 🥇 🍚 🥇 🍚 🥇' },
+            { emoji: '🎀', title: '仅限天天', desc: '此系统仅为天天一人服务 💝', decor: '🎀 💝 🎀 💝 🎀 💝' },
+            { emoji: '💫', title: '永久有效', desc: '天天专属卡片 · 不过期不收回 🃏', decor: '💫 ✨ 💫 ✨ 💫 ✨' },
+        ];
+
+        const shySteps = [
+            { emoji: '😳', title: '真的要打开吗？', desc: '很害羞的……你确定？' },
+            { emoji: '🙈', title: '真的要看吗？', desc: '里面是很害羞的内容哦……' },
+            { emoji: '🫣', title: '最后一个问题', desc: '确定不后悔？真的要打开？' },
+        ];
+
+        let pendingEgg = 0;
+        let shyStep = 0;
+
+        function shyConfirm(index) {
+            pendingEgg = index;
+            shyStep = 0;
+            renderShyStep();
+            document.getElementById('shyOverlay').classList.add('show');
+        }
+
+        function renderShyStep() {
+            const step = shySteps[shyStep];
+            document.getElementById('shyEmoji').textContent = step.emoji;
+            document.getElementById('shyTitle').textContent = step.title;
+            document.getElementById('shyDesc').textContent = step.desc;
+            document.getElementById('shyConfirmBtn').textContent = shyStep < shySteps.length - 1 ? '🥹 继续' : '🥹 好、好吧……';
+        }
+
+        function confirmShy() {
+            shyStep++;
+            if (shyStep >= shySteps.length) {
+                // 全部确认完毕，显示彩蛋
+                document.getElementById('shyOverlay').classList.remove('show');
+                showEgg(pendingEgg);
+            } else {
+                renderShyStep();
+            }
+        }
+
+        function cancelShy() {
+            document.getElementById('shyOverlay').classList.remove('show');
+            document.getElementById('naOverlay').classList.add('show');
+        }
+        function closeNA() {
+            document.getElementById('naOverlay').classList.remove('show');
+        }
+
+        function showEgg(index) {
+            const egg = eggs[index];
+            document.getElementById('eggEmoji').textContent = egg.emoji;
+            document.getElementById('eggTitle').textContent = egg.title;
+            document.getElementById('eggDesc').textContent = egg.desc;
+            document.getElementById('eggDecor').textContent = egg.decor;
+            document.getElementById('eggOverlay').classList.add('show');
+        }
+        function closeEgg() {
+            document.getElementById('eggOverlay').classList.remove('show');
+        }
+
+        // ====================================================================
+        //  进入应用
+        // ====================================================================
+        function enterApp() {
+            document.getElementById('splash').classList.add('hidden');
+            // 1秒后切换美食特效
+            setTimeout(switchToFood, 1200);
+        }
+
+        // ====================================================================
+        //  初始化
+        // ====================================================================
+        renderMenu();
+        renderCart();
+    </script>
+</body>
+</html>
